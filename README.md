@@ -1,7 +1,14 @@
-# Jets - Typescript emitter for Java
-Generate typescript from Java source code by annotation processing.
+# Jets - TypeScript type emitter for Java
+
+A lightweight, fast, flexible solution to share Java types and constants in Typescript.
 
 ## Why?
+Jets uses Java annotation processing + templating. Here's a speed comparison:
+
+## Alternatives
+
+* [bsorrentino/java2typescript](https://github.com/bsorrentino/java2typescript)
+* [vojtechhabarta/typescript-generator](https://github.com/vojtechhabarta/typescript-generator)
 
 ## Development
 
@@ -15,9 +22,9 @@ Optionally, mount tmpfs for build output dir:
 sudo ./mount-tmpfs.sh
 ```
 
-## License
-![CC BY 4.0](/home/cuz/workspace/jets/misc/by.svg)
-CC BY 4.0
-
 ## Author & Contributors
 Cause Chung (cuzfrog@gmail.com)
+
+## License
+![CC BY 4.0](./misc/by.svg)
+CC BY 4.0
