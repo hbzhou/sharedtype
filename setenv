@@ -1,0 +1,7 @@
+#!/bin/bash
+
+export PATH=$JAVA21_HOME/bin:$PATH
+export JAVA_HOME=$JAVA21_HOME
+
+java -version
+
