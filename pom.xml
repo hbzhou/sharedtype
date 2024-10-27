@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.cuzfrog</groupId>
-    <artifactId>jets-parent</artifactId>
+    <groupId>org.sharedtype</groupId>
+    <artifactId>sharedtype-parent</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Jets Parent</name>
-    <url>https://github.com/cuzfrog/jets</url>
+    <name>SharedType Parent</name>
+    <url>https://github.com/cuzfrog/sharedtype</url>
     <developers>
         <developer>
             <name>Cause Chung</name>
@@ -18,9 +18,9 @@
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:git@github.com:cuzfrog/jets.git</connection>
-        <developerConnection>scm:git:git@github.com:cuzfrog/jets.git</developerConnection>
-        <url>https://github.com/cuzfrog/jets/</url>
+        <connection>scm:git:git@github.com:cuzfrog/sharedtype.git</connection>
+        <developerConnection>scm:git:git@github.com:cuzfrog/sharedtype.git</developerConnection>
+        <url>https://github.com/cuzfrog/sharedtype/</url>
         <tag>HEAD</tag>
     </scm>
     <licenses>
@@ -32,28 +32,95 @@
 
     <modules>
         <module>annotation</module>
+        <module>internal</module>
         <module>processor</module>
+        <module>it</module>
     </modules>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <junit-jupiter.version>5.10.2</junit-jupiter.version>
+        <lombok.version>1.18.34</lombok.version>
+        <auto-service.version>1.1.1</auto-service.version>
+        <dagger.version>2.52</dagger.version>
+        <mockito.version>5.14.1</mockito.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.sharedtype</groupId>
+                <artifactId>sharedtype</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.sharedtype</groupId>
+                <artifactId>sharedtype-internal</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.sharedtype</groupId>
+                <artifactId>sharedtype-ap</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>3.0.2</version>
+            </dependency>            
+            <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
                 <version>${junit-jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit-jupiter.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>3.25.3</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.auto.service</groupId>
+                <artifactId>auto-service-annotations</artifactId>
+                <version>${auto-service.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>com.google.dagger</groupId>
+                <artifactId>dagger</artifactId>
+                <version>${dagger.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>com.google.dagger</groupId>
+                <artifactId>dagger-compiler</artifactId>
+                <version>${dagger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <scope>provided</scope>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>${mockito.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
