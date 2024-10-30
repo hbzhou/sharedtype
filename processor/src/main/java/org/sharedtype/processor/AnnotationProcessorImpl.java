@@ -1,9 +1,9 @@
 package org.sharedtype.processor;
 
 import com.google.auto.service.AutoService;
-import org.sharedtype.processor.context.Context;
-import org.sharedtype.processor.context.Props;
 import org.sharedtype.domain.TypeDef;
+import org.sharedtype.processor.context.Context;
+import org.sharedtype.processor.context.PropsFactory;
 import org.sharedtype.processor.parser.TypeDefParser;
 import org.sharedtype.processor.resolver.TypeResolver;
 import org.sharedtype.processor.support.annotation.VisibleForTesting;
@@ -15,11 +15,13 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedOptions;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -28,8 +30,10 @@ import static org.sharedtype.processor.support.Preconditions.checkArgument;
 
 @SupportedAnnotationTypes("org.sharedtype.annotation.SharedType")
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
+@SupportedOptions({"sharedtype.propsFile"})
 @AutoService(Processor.class)
 public final class AnnotationProcessorImpl extends AbstractProcessor {
+    private static final String DEFAULT_USER_PROPERTIES_FILE = "sharedtype.properties";
     private static final boolean ANNOTATION_CONSUMED = true;
     private Context ctx;
     private TypeDefParser parser;
@@ -39,11 +43,11 @@ public final class AnnotationProcessorImpl extends AbstractProcessor {
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
-        ctx = new Context(processingEnv, new Props()); // TODO: check thread safety
-        var component = DaggerComponents.builder().withContext(ctx).build();
-        parser = component.parser();
-        resolver = component.resolver();
-        writer = component.writer();
+        String configFile = processingEnv.getOptions().getOrDefault("sharedtype.propsFile", DEFAULT_USER_PROPERTIES_FILE);
+        ctx = new Context(processingEnv, PropsFactory.loadProps(Paths.get(configFile)));
+        parser = TypeDefParser.create(ctx);
+        resolver = TypeResolver.create(ctx, parser);
+        writer = TypeWriter.create(ctx);
     }
 
     @Override

@@ -17,8 +17,6 @@ import org.sharedtype.processor.support.utils.Tuple;
 import org.sharedtype.processor.writer.render.Template;
 import org.sharedtype.processor.writer.render.TemplateRenderer;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import javax.lang.model.util.Elements;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -27,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Singleton
 final class TypescriptTypeFileWriter implements TypeWriter {
     private static final Map<ConcreteTypeInfo, String> PREDEFINED_TYPE_NAME_MAPPINGS = Map.ofEntries(
         Map.entry(Constants.BOOLEAN_TYPE_INFO, "boolean"),
@@ -58,7 +55,6 @@ final class TypescriptTypeFileWriter implements TypeWriter {
     private final TemplateRenderer renderer;
     private final char interfacePropertyDelimiter;
 
-    @Inject
     TypescriptTypeFileWriter(Context ctx, TemplateRenderer renderer) {
         this.ctx = ctx;
         elements = ctx.getProcessingEnv().getElementUtils();
@@ -66,7 +62,7 @@ final class TypescriptTypeFileWriter implements TypeWriter {
         interfacePropertyDelimiter = ctx.getProps().getTypescript().getInterfacePropertyDelimiter();
 
         typeNameMappings = new HashMap<>(PREDEFINED_TYPE_NAME_MAPPINGS);
-        typeNameMappings.put(Constants.OBJECT_TYPE_INFO, ctx.getProps().getJavaObjectMapType());
+        typeNameMappings.put(Constants.OBJECT_TYPE_INFO, ctx.getProps().getTypescript().getJavaObjectMapType());
         renderer.loadTemplates(
             Template.TEMPLATE_INTERFACE,
             Template.TEMPLATE_ENUM_UNION
