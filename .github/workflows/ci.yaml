@@ -34,17 +34,50 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: build_and_test_maven
+          key: build_maven
       - name: Build
-        run: ./mvnw compile -e
-      - name: Test
-        run: ./mvnw test -e
-      - uses: actions/upload-artifact@v4
+        run: ./mvnw install -e
+      - name: Upload generated sources
+        uses: actions/upload-artifact@v4
         with:
           name: generated-sources
           path: |
-            it/target/generated-sources/*
+            it/java17/target/generated-sources
           if-no-files-found: error
+      - name: Upload jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: jars
+          path: |
+              ~/.m2/repository/org/sharedtype
+          if-no-files-found: error
+      - name: Remove jars from cache
+        run: rm -rf ~/.m2/repository/org/sharedtype
+
+  jdk_compatibility_test:
+    needs: [build_and_test]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ 8, 11 ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: jars
+          path: ~/.m2/repository/org/sharedtype
+#      - name: Display downloaded artifact
+#        run: ls -lhR ~/.m2/repository/org/sharedtype
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: build_maven
+      - name: Test
+        run: ./mvnw verify -pl it/java8 -e
 
   client_test:
     needs: [build_and_test]
@@ -57,9 +90,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: generated-sources
-          path: it/target/generated-sources/
+          path: it/java17/target/generated-sources
       - name: Display downloaded artifact
-        run: ls -lhR it/target/generated-sources
+        run: ls -lhR it/java17/target/generated-sources
       - name: Test Typescript
         working-directory: client-test/typescript
         run: |
@@ -67,7 +100,7 @@ jobs:
           npm run test
 
   clean-artifact:
-    needs: [ client_test ]
+    needs: [ jdk_compatibility_test, client_test ]
     runs-on: ubuntu-latest
     if: always()
     steps:

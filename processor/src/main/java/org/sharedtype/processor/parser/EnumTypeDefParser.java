@@ -1,13 +1,16 @@
 package org.sharedtype.processor.parser;
 
+import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.NewClassTree;
+import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import lombok.RequiredArgsConstructor;
 import org.sharedtype.annotation.SharedType;
 import org.sharedtype.domain.EnumDef;
 import org.sharedtype.domain.EnumValueInfo;
 import org.sharedtype.domain.TypeDef;
+import org.sharedtype.domain.TypeInfo;
 import org.sharedtype.processor.context.Config;
 import org.sharedtype.processor.context.Context;
 import org.sharedtype.processor.parser.type.TypeInfoParser;
@@ -31,11 +34,11 @@ final class EnumTypeDefParser implements TypeDefParser {
 
     @Override
     public TypeDef parse(TypeElement typeElement) {
-        var config = new Config(typeElement);
-        var enclosedElements = typeElement.getEnclosedElements();
+        Config config = new Config(typeElement);
+        List<? extends Element> enclosedElements = typeElement.getEnclosedElements();
         List<VariableElement> enumConstantElems = new ArrayList<>(enclosedElements.size());
 
-        var enumValueMarker = new EnumValueMarker(ctx, config);
+        EnumValueMarker enumValueMarker = new EnumValueMarker(ctx, config);
         for (Element enclosedElement : enclosedElements) {
             if (enclosedElement.getKind() == ElementKind.ENUM_CONSTANT) {
                 enumConstantElems.add((VariableElement) enclosedElement);
@@ -65,18 +68,23 @@ final class EnumTypeDefParser implements TypeDefParser {
 
     private List<EnumValueInfo> parseEnumConstants(List<VariableElement> enumConstants, EnumValueMarker enumValueMarker) {
         List<EnumValueInfo> res = new ArrayList<>(enumConstants.size());
-        var valueTypeInfo = typeInfoParser.parse(enumValueMarker.enumValueVariableElem.asType());
-        var ctorArgIdx = enumValueMarker.matchAndGetConstructorArgIdx();
+        TypeInfo valueTypeInfo = typeInfoParser.parse(enumValueMarker.enumValueVariableElem.asType());
+        int ctorArgIdx = enumValueMarker.matchAndGetConstructorArgIdx();
         if (ctorArgIdx < 0) {
             return Collections.emptyList();
         }
         for (VariableElement enumConstant : enumConstants) {
-            var tree = ctx.getTrees().getTree(enumConstant);
-            if (tree instanceof VariableTree variableTree) {
-                var value = resolveValue(variableTree, ctorArgIdx);
+            Tree tree = ctx.getTrees().getTree(enumConstant);
+            if (tree instanceof VariableTree) {
+                VariableTree variableTree = (VariableTree) tree;
+                Object value = resolveValue(variableTree, ctorArgIdx);
                 if (value != null) {
                     res.add(new EnumValueInfo(valueTypeInfo, value));
                 }
+            } else if (tree == null) {
+                ctx.error("Literal value cannot be parsed from enum constant: %s, because source tree from the element is null." +
+                    " This could mean at the time of the annotation processing, the source tree was not available." +
+                    " Is this class from a dependency jar/compiled class file? Please refer to the documentation for more information.", enumConstant);
             } else {
                 throw new SharedTypeInternalError(String.format("Unsupported tree, kind: %s, tree: %s, element: %s", tree.getKind(), tree, enumConstant));
             }
@@ -85,11 +93,13 @@ final class EnumTypeDefParser implements TypeDefParser {
     }
 
     private Object resolveValue(VariableTree tree, int ctorArgIdx) {
-        var init = tree.getInitializer();
-        if (init instanceof NewClassTree newClassTree) {
+        ExpressionTree init = tree.getInitializer();
+        if (init instanceof NewClassTree) {
+            NewClassTree newClassTree = (NewClassTree) init;
             try {
-                var argTree = newClassTree.getArguments().get(ctorArgIdx);
-                if (argTree instanceof LiteralTree argLiteralTree) {
+                ExpressionTree argTree = newClassTree.getArguments().get(ctorArgIdx);
+                if (argTree instanceof LiteralTree) {
+                    LiteralTree argLiteralTree = (LiteralTree) argTree;
                     return argLiteralTree.getValue();
                 } else {
                     ctx.error("Unsupported argument: %s in %s, argIndex: %s. Only literals are supported as enum value."

@@ -16,20 +16,19 @@ import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedOptions;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import static org.sharedtype.domain.Constants.ANNOTATION_QUALIFIED_NAME;
 import static org.sharedtype.processor.support.Preconditions.checkArgument;
 
 @SupportedAnnotationTypes("org.sharedtype.annotation.SharedType")
-@SupportedSourceVersion(SourceVersion.RELEASE_17)
 @SupportedOptions({"sharedtype.propsFile"})
 @AutoService(Processor.class)
 public final class AnnotationProcessorImpl extends AbstractProcessor {
@@ -39,6 +38,11 @@ public final class AnnotationProcessorImpl extends AbstractProcessor {
     private TypeDefParser parser;
     private TypeResolver resolver;
     private TypeWriter writer;
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
+    }
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -58,7 +62,7 @@ public final class AnnotationProcessorImpl extends AbstractProcessor {
         if (annotations.size() > 1) {
             throw new SharedTypeInternalError(String.format("Only '%s' is expected.", ANNOTATION_QUALIFIED_NAME));
         }
-        var annotation = annotations.iterator().next();
+        TypeElement annotation = annotations.iterator().next();
         checkArgument(annotation.getQualifiedName().contentEquals(ANNOTATION_QUALIFIED_NAME), "Wrong anno: %s", annotation);
 
         doProcess(roundEnv.getElementsAnnotatedWith(annotation));
@@ -67,10 +71,11 @@ public final class AnnotationProcessorImpl extends AbstractProcessor {
 
     @VisibleForTesting
     void doProcess(Set<? extends Element> elements) {
-        var discoveredDefs = new ArrayList<TypeDef>(elements.size());
+        List<TypeDef> discoveredDefs = new ArrayList<>(elements.size());
         for (Element element : elements) {
-            if (element instanceof TypeElement typeElement) {
-                var typeDef = parser.parse(typeElement);
+            if (element instanceof TypeElement) {
+                TypeElement typeElement = (TypeElement) element;
+                TypeDef typeDef = parser.parse(typeElement);
                 if (typeDef != null) {
                     discoveredDefs.add(typeDef);
                 } else {
@@ -80,7 +85,7 @@ public final class AnnotationProcessorImpl extends AbstractProcessor {
                 throw new UnsupportedOperationException("Unsupported element: " + element);
             }
         }
-        var resolvedDefs = resolver.resolve(discoveredDefs);
+        List<TypeDef> resolvedDefs = resolver.resolve(discoveredDefs);
         try {
             writer.write(resolvedDefs);
         } catch (IOException e) {
