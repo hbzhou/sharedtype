@@ -58,7 +58,7 @@ final class EnumTypeDefParser implements TypeDefParser {
             .qualifiedName(config.getQualifiedName())
             .simpleName(config.getName())
             .enumValueInfos(
-                enumValueMarker.marked() ? parseEnumConstants(enumConstantElems, enumValueMarker) : useEnumConstantNames(enumConstantElems)
+                enumValueMarker.marked() ? parseEnumConstants(typeElement, enumConstantElems, enumValueMarker) : useEnumConstantNames(enumConstantElems)
             )
             .build();
     }
@@ -71,7 +71,7 @@ final class EnumTypeDefParser implements TypeDefParser {
         return res;
     }
 
-    private List<EnumValueInfo> parseEnumConstants(List<VariableElement> enumConstants, EnumValueMarker enumValueMarker) {
+    private List<EnumValueInfo> parseEnumConstants(TypeElement enumTypeElement, List<VariableElement> enumConstants, EnumValueMarker enumValueMarker) {
         List<EnumValueInfo> res = new ArrayList<>(enumConstants.size());
         TypeInfo valueTypeInfo = typeInfoParser.parse(enumValueMarker.enumValueVariableElem.asType());
         int ctorArgIdx = enumValueMarker.matchAndGetConstructorArgIdx();
@@ -82,22 +82,24 @@ final class EnumTypeDefParser implements TypeDefParser {
             Tree tree = ctx.getTrees().getTree(enumConstant);
             if (tree instanceof VariableTree) {
                 VariableTree variableTree = (VariableTree) tree;
-                Object value = resolveValue(variableTree, ctorArgIdx);
+                Object value = resolveValue(enumTypeElement, variableTree, ctorArgIdx);
                 if (value != null) {
                     res.add(new EnumValueInfo(valueTypeInfo, value));
                 }
             } else if (tree == null) {
-                ctx.error("Literal value cannot be parsed from enum constant: %s, because source tree from the element is null." +
+                ctx.error("Literal value cannot be parsed from enum constant: %s of enum %s, because source tree from the element is null." +
                     " This could mean at the time of the annotation processing, the source tree was not available." +
-                    " Is this class from a dependency jar/compiled class file? Please refer to the documentation for more information.", enumConstant);
+                    " Is this class from a dependency jar/compiled class file? Please refer to the documentation for more information.",
+                    enumConstant, enumTypeElement);
             } else {
-                throw new SharedTypeInternalError(String.format("Unsupported tree, kind: %s, tree: %s, element: %s", tree.getKind(), tree, enumConstant));
+                throw new SharedTypeInternalError(String.format(
+                    "Unsupported tree during parsing enum %s, kind: %s, tree: %s, element: %s", enumTypeElement, tree.getKind(), tree, enumConstant));
             }
         }
         return res;
     }
 
-    private Object resolveValue(VariableTree tree, int ctorArgIdx) {
+    private Object resolveValue(TypeElement enumTypeElement, VariableTree tree, int ctorArgIdx) {
         ExpressionTree init = tree.getInitializer();
         if (init instanceof NewClassTree) {
             NewClassTree newClassTree = (NewClassTree) init;
@@ -107,16 +109,16 @@ final class EnumTypeDefParser implements TypeDefParser {
                     LiteralTree argLiteralTree = (LiteralTree) argTree;
                     return argLiteralTree.getValue();
                 } else {
-                    ctx.error("Unsupported argument: %s in %s, argIndex: %s. Only literals are supported as enum value."
-                        , argTree, tree, ctorArgIdx);
+                    ctx.error("Unsupported argument in enum type %s: %s in %s, argIndex: %s. Only literals are supported as enum value.",
+                        enumTypeElement, argTree, tree, ctorArgIdx);
                     return null;
                 }
             } catch (IndexOutOfBoundsException e) {
                 throw new SharedTypeInternalError(String.format(
-                    "Initializer has incorrect number of arguments: %s in tree: %s, argIndex: %s", init, tree, ctorArgIdx));
+                    "Initializer in enum %s has incorrect number of arguments: %s in tree: %s, argIndex: %s", enumTypeElement, init, tree, ctorArgIdx));
             }
         }
-        throw new SharedTypeInternalError(String.format("Unsupported initializer: %s in tree: %s", init, tree));
+        throw new SharedTypeInternalError(String.format("Unsupported initializer in enum %s: %s in tree: %s", enumTypeElement, init, tree));
     }
 
     @RequiredArgsConstructor
@@ -142,7 +144,7 @@ final class EnumTypeDefParser implements TypeDefParser {
 
         void setField(VariableElement enumValueVariableElem) {
             if (this.enumValueVariableElem != null) {
-                ctx.error("Enum '%s' has multiple annotation @%s usage, only one field or constructor parameter is allowed, found on %s and %s",
+                ctx.error("Enum %s has multiple annotation @%s usage, only one field or constructor parameter is allowed, found on %s and %s",
                     config.getQualifiedName(), SharedType.EnumValue.class, this.enumValueVariableElem, enumValueVariableElem);
             } else {
                 this.enumValueVariableElem = enumValueVariableElem;
@@ -166,12 +168,13 @@ final class EnumTypeDefParser implements TypeDefParser {
             String lombokSuggestion = "";
             if (constructorArgNames.isEmpty()) {
                 lombokSuggestion = "The discovered constructor has 0 parameter, if Lombok is used to generate the constructor," +
-                    " please ensure annotation processing of Lombok is executed before SharedType.";
+                    " please ensure annotation processing of Lombok is executed before SharedType. Or add explicit constructor." +
+                    " Later version of SharedType may infer constructor parameter position by field position without an explicit constructor.";
             }
 
-            ctx.error("Enum '%s' has @%s annotated on a field, but no constructor parameter can be matched."
+            ctx.error("Enum %s has @%s annotated on a field, but no constructor parameter can be matched."
                     + lombokSuggestion
-                    + " Please refer to the documentation on how to correctly use mark enum value.",
+                    + " May refer to the documentation on how to correctly mark enum value.",
                 config.getQualifiedName(), SharedType.EnumValue.class);
             return -1;
         }
