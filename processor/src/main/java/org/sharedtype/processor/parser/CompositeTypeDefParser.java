@@ -3,11 +3,15 @@ package org.sharedtype.processor.parser;
 import lombok.RequiredArgsConstructor;
 import org.sharedtype.domain.TypeDef;
 import org.sharedtype.processor.context.Context;
-import org.sharedtype.processor.support.exception.SharedTypeInternalError;
+import org.sharedtype.support.exception.SharedTypeInternalError;
 
 import javax.lang.model.element.TypeElement;
 import java.util.Map;
 
+/**
+ *
+ * @author Cause Chung
+ */
 @RequiredArgsConstructor
 final class CompositeTypeDefParser implements TypeDefParser {
     private final Context ctx;
@@ -19,7 +23,7 @@ final class CompositeTypeDefParser implements TypeDefParser {
             return null;
         }
         String qualifiedName = typeElement.getQualifiedName().toString();
-        TypeDef cachedDef = ctx.getTypeCache().getTypeDef(qualifiedName);
+        TypeDef cachedDef = ctx.getTypeStore().getTypeDef(qualifiedName);
         if (cachedDef != null) {
             return cachedDef;
         }
@@ -30,7 +34,7 @@ final class CompositeTypeDefParser implements TypeDefParser {
         }
 
         TypeDef typeDef = parser.parse(typeElement);
-        ctx.getTypeCache().saveTypeDef(qualifiedName, typeDef);
+        ctx.getTypeStore().saveTypeDef(qualifiedName, typeDef);
         return typeDef;
     }
 }

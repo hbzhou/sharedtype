@@ -12,9 +12,9 @@ import org.sharedtype.domain.TypeDef;
 import org.sharedtype.domain.TypeInfo;
 import org.sharedtype.domain.TypeVariableInfo;
 import org.sharedtype.processor.context.Context;
-import org.sharedtype.processor.support.annotation.SideEffect;
-import org.sharedtype.processor.support.exception.SharedTypeInternalError;
-import org.sharedtype.processor.support.utils.Tuple;
+import org.sharedtype.support.annotation.SideEffect;
+import org.sharedtype.support.exception.SharedTypeInternalError;
+import org.sharedtype.support.utils.Tuple;
 import org.sharedtype.processor.writer.render.Template;
 import org.sharedtype.processor.writer.render.TemplateRenderer;
 
@@ -27,12 +27,14 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ *
+ * @author Cause Chung
+ */
 final class TypescriptTypeFileWriter implements TypeWriter {
     private static final Map<ConcreteTypeInfo, String> PREDEFINED_TYPE_NAME_MAPPINGS;
     static {
@@ -157,7 +159,7 @@ final class TypescriptTypeFileWriter implements TypeWriter {
             }
         } else if (typeInfo instanceof TypeVariableInfo) {
             TypeVariableInfo typeVariableInfo = (TypeVariableInfo) typeInfo;
-            nameBuilder.append(typeVariableInfo.getName());
+            nameBuilder.append(typeVariableInfo.name());
         } else if (typeInfo instanceof ArrayTypeInfo) {
             ArrayTypeInfo arrayTypeInfo = (ArrayTypeInfo) typeInfo;
             buildTypeExprRecursively(arrayTypeInfo.component(), nameBuilder);
@@ -189,6 +191,7 @@ final class TypescriptTypeFileWriter implements TypeWriter {
     }
 
     @RequiredArgsConstructor
+    @SuppressWarnings("unused")
     static final class PropertyExpr{
         final String name;
         final String type;

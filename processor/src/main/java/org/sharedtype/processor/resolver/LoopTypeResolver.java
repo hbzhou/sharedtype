@@ -12,15 +12,21 @@ import org.sharedtype.domain.TypeInfo;
 import org.sharedtype.domain.TypeVariableInfo;
 import org.sharedtype.processor.context.Context;
 import org.sharedtype.processor.parser.TypeDefParser;
-import org.sharedtype.processor.support.annotation.SideEffect;
-import org.sharedtype.processor.support.exception.SharedTypeInternalError;
+import org.sharedtype.support.annotation.SideEffect;
+import org.sharedtype.support.exception.SharedTypeInternalError;
 
 import javax.lang.model.element.TypeElement;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.LinkedHashSet;
 import java.util.List;
 
+/**
+ * Implementation that uses stacks to traverse the type graph.
+ *
+ * @author Cause Chung
+ */
 @RequiredArgsConstructor
 final class LoopTypeResolver implements TypeResolver {
     private static final int DEPENDENCY_COUNT_EXPANSION_FACTOR = 2; // TODO: find a proper number
@@ -30,13 +36,16 @@ final class LoopTypeResolver implements TypeResolver {
     @Override
     public List<TypeDef> resolve(List<TypeDef> typeDefs) {
         int n = typeDefs.size() * DEPENDENCY_COUNT_EXPANSION_FACTOR;
-        List<TypeDef> resolvedDefs = new ArrayList<>(n);
+        LinkedHashSet<TypeDef> resolvedDefs = new LinkedHashSet<>(n);
         Deque<TypeDef> processingDefStack = new ArrayDeque<>(n); // TODO: pass metadata from ctx to better size these buffers
         Deque<TypeInfo> processingInfoStack = new ArrayDeque<>(n);
         processingDefStack.addAll(typeDefs);
 
         while (!processingDefStack.isEmpty()) {
             TypeDef typeDef = processingDefStack.pop();
+            if (resolvedDefs.contains(typeDef)) {
+                continue;
+            }
             if (typeDef.resolved()) {
                 resolvedDefs.add(typeDef);
                 continue;
@@ -75,7 +84,7 @@ final class LoopTypeResolver implements TypeResolver {
             resolveTypeInfo(processingDefStack, processingInfoStack);
         }
 
-        return resolvedDefs;
+        return new ArrayList<>(resolvedDefs);
     }
 
     @SideEffect

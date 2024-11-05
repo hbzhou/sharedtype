@@ -1,7 +1,12 @@
-package org.sharedtype.processor.support.utils;
+package org.sharedtype.support.utils;
 
+import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * @author Cause Chung
+ */
+@EqualsAndHashCode
 @RequiredArgsConstructor
 public final class Tuple<A, B> {
     private final A a;

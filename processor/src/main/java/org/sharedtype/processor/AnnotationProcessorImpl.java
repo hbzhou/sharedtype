@@ -6,8 +6,9 @@ import org.sharedtype.processor.context.Context;
 import org.sharedtype.processor.context.PropsFactory;
 import org.sharedtype.processor.parser.TypeDefParser;
 import org.sharedtype.processor.resolver.TypeResolver;
-import org.sharedtype.processor.support.annotation.VisibleForTesting;
-import org.sharedtype.processor.support.exception.SharedTypeInternalError;
+import org.sharedtype.support.annotation.VisibleForTesting;
+import org.sharedtype.support.exception.SharedTypeException;
+import org.sharedtype.support.exception.SharedTypeInternalError;
 import org.sharedtype.processor.writer.TypeWriter;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -26,18 +27,23 @@ import java.util.List;
 import java.util.Set;
 
 import static org.sharedtype.domain.Constants.ANNOTATION_QUALIFIED_NAME;
-import static org.sharedtype.processor.support.Preconditions.checkArgument;
+import static org.sharedtype.support.Preconditions.checkArgument;
 
+/**
+ *
+ * @author Cause Chung
+ */
 @SupportedAnnotationTypes("org.sharedtype.annotation.SharedType")
 @SupportedOptions({"sharedtype.propsFile"})
 @AutoService(Processor.class)
 public final class AnnotationProcessorImpl extends AbstractProcessor {
-    private static final String DEFAULT_USER_PROPERTIES_FILE = "sharedtype.properties";
+    private static final String PROPS_FILE_OPTION_NAME = "sharedtype.propsFile";
+    private static final String DEFAULT_USER_PROPS_FILE = "sharedtype.properties";
     private static final boolean ANNOTATION_CONSUMED = true;
-    private Context ctx;
-    private TypeDefParser parser;
-    private TypeResolver resolver;
-    private TypeWriter writer;
+    Context ctx;
+    TypeDefParser parser;
+    TypeResolver resolver;
+    TypeWriter writer;
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
@@ -47,7 +53,7 @@ public final class AnnotationProcessorImpl extends AbstractProcessor {
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
-        String configFile = processingEnv.getOptions().getOrDefault("sharedtype.propsFile", DEFAULT_USER_PROPERTIES_FILE);
+        String configFile = processingEnv.getOptions().getOrDefault(PROPS_FILE_OPTION_NAME, DEFAULT_USER_PROPS_FILE);
         ctx = new Context(processingEnv, PropsFactory.loadProps(Paths.get(configFile)));
         parser = TypeDefParser.create(ctx);
         resolver = TypeResolver.create(ctx, parser);
@@ -79,7 +85,7 @@ public final class AnnotationProcessorImpl extends AbstractProcessor {
                 if (typeDef != null) {
                     discoveredDefs.add(typeDef);
                 } else {
-                    ctx.warning("Type '%s' is ignored, but annotated with '%s'.", typeElement.getQualifiedName(), ANNOTATION_QUALIFIED_NAME);
+                    ctx.warning("Type '%s' is ignored or invalid, but annotated with '%s'.", typeElement.getQualifiedName().toString(), ANNOTATION_QUALIFIED_NAME);
                 }
             } else {
                 throw new UnsupportedOperationException("Unsupported element: " + element);
@@ -89,7 +95,7 @@ public final class AnnotationProcessorImpl extends AbstractProcessor {
         try {
             writer.write(resolvedDefs);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to write to file,", e);
+            throw new SharedTypeException("Failed to write,", e);
         }
     }
 }

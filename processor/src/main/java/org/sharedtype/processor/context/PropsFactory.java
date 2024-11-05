@@ -1,6 +1,6 @@
 package org.sharedtype.processor.context;
 
-import org.sharedtype.processor.support.exception.SharedTypeException;
+import org.sharedtype.support.exception.SharedTypeException;
 
 import javax.annotation.Nullable;
 import java.io.InputStream;
@@ -12,6 +12,8 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
+ * Global properties loader.
+ *
  * @author Cause Chung
  */
 public final class PropsFactory {

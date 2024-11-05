@@ -1,9 +1,13 @@
-package org.sharedtype.processor.support;
+package org.sharedtype.support;
 
-import org.sharedtype.processor.support.exception.SharedTypeInternalError;
+import org.sharedtype.support.exception.SharedTypeInternalError;
 
 import java.util.Collection;
 
+/**
+ *
+ * @author Cause Chung
+ */
 // TODO: remove varargs to improve performance
 public final class Preconditions {
     private Preconditions() {

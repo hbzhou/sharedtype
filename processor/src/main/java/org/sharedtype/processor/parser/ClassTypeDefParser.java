@@ -9,9 +9,9 @@ import org.sharedtype.domain.TypeVariableInfo;
 import org.sharedtype.processor.context.Config;
 import org.sharedtype.processor.context.Context;
 import org.sharedtype.processor.parser.type.TypeInfoParser;
-import org.sharedtype.processor.support.annotation.VisibleForTesting;
-import org.sharedtype.processor.support.utils.Tuple;
-import org.sharedtype.processor.support.utils.Utils;
+import org.sharedtype.support.annotation.VisibleForTesting;
+import org.sharedtype.support.utils.Tuple;
+import org.sharedtype.support.utils.Utils;
 
 import javax.annotation.Nullable;
 import javax.lang.model.element.Element;
@@ -26,12 +26,17 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ *
+ * @author Cause Chung
+ */
 final class ClassTypeDefParser implements TypeDefParser {
     private final Context ctx;
     private final Types types;
@@ -76,23 +81,21 @@ final class ClassTypeDefParser implements TypeDefParser {
     }
 
     private List<TypeInfo> parseSupertypes(TypeElement typeElement) {
-        List<TypeElement> supertypeElems = new ArrayList<>();
+        List<DeclaredType> supertypes = new ArrayList<>();
         TypeMirror superclass = typeElement.getSuperclass();
-        if (superclass instanceof DeclaredType) {
-            DeclaredType declaredType = (DeclaredType) superclass;
-            supertypeElems.add((TypeElement) declaredType.asElement());
+        if (superclass instanceof DeclaredType) { // superclass can be NoType.
+            supertypes.add((DeclaredType) superclass);
         }
 
         List<? extends TypeMirror> interfaceTypes = typeElement.getInterfaces();
         for (TypeMirror interfaceType : interfaceTypes) {
-            DeclaredType declaredType = (DeclaredType) interfaceType;
-            supertypeElems.add((TypeElement) declaredType.asElement());
+            supertypes.add((DeclaredType) interfaceType);
         }
 
-        List<TypeInfo> res = new ArrayList<>(supertypeElems.size());
-        for (TypeElement supertypeElem : supertypeElems) {
-            if (!ctx.isTypeIgnored(supertypeElem)) {
-                res.add(typeInfoParser.parse(supertypeElem.asType()));
+        List<TypeInfo> res = new ArrayList<>(supertypes.size());
+        for (DeclaredType supertype : supertypes) {
+            if (!ctx.isTypeIgnored((TypeElement) supertype.asElement())) {
+                res.add(typeInfoParser.parse(supertype));
             }
         }
         return res;
@@ -119,7 +122,7 @@ final class ClassTypeDefParser implements TypeDefParser {
     List<Tuple<Element, String>> resolveComponents(TypeElement typeElement, Config config) {
         List<? extends Element> enclosedElements = typeElement.getEnclosedElements();
         List<Tuple<Element, String>> res = new ArrayList<>(enclosedElements.size());
-        NamesOfTypes uniqueNamesOfTypes = new NamesOfTypes(enclosedElements.size());
+        NamesOfTypes uniqueNamesOfTypes = new NamesOfTypes(enclosedElements.size(), typeElement);
         boolean includeAccessors = config.includes(SharedType.ComponentType.ACCESSORS);
         boolean includeFields = config.includes(SharedType.ComponentType.FIELDS);
 
@@ -129,7 +132,7 @@ final class ClassTypeDefParser implements TypeDefParser {
             .collect(Collectors.toSet());
 
         for (Element enclosedElement : enclosedElements) {
-            if (config.isComponentIgnored(enclosedElement)) {
+            if (enclosedElement.getAnnotation(SharedType.Ignore.class) != null) {
                 continue;
             }
 
@@ -143,9 +146,7 @@ final class ClassTypeDefParser implements TypeDefParser {
                 }
                 res.add(Tuple.of(variableElem, name));
                 uniqueNamesOfTypes.add(name, type);
-            }
-
-            if (includeAccessors && enclosedElement instanceof ExecutableElement) {
+            } else if (includeAccessors && enclosedElement instanceof ExecutableElement) {
                 ExecutableElement methodElem = (ExecutableElement) enclosedElement;
                 boolean explicitAccessor = methodElem.getAnnotation(SharedType.Accessor.class) != null;
                 if (!isZeroArgNonstaticMethod(methodElem)) {
@@ -167,6 +168,11 @@ final class ClassTypeDefParser implements TypeDefParser {
             }
 
             // TODO: CONSTANTS
+
+            if (uniqueNamesOfTypes.ignoredType != null) {
+                ctx.error("%s.%s references to explicitly ignored type %s.",typeElement, name, uniqueNamesOfTypes.ignoredType);
+                return Collections.emptyList();
+            }
         }
 
         return res;
@@ -196,9 +202,12 @@ final class ClassTypeDefParser implements TypeDefParser {
     }
 
     private final class NamesOfTypes {
+        private final TypeElement contextType;
         private final Map<String, TypeMirror> namesOfTypes;
+        private TypeMirror ignoredType;
 
-        NamesOfTypes(int size) {
+        NamesOfTypes(int size, TypeElement contextType) {
+            this.contextType = contextType;
             this.namesOfTypes = new HashMap<>(size);
         }
 
@@ -208,13 +217,17 @@ final class ClassTypeDefParser implements TypeDefParser {
                 return false;
             }
             if (!types.isSameType(type, componentType)) {
-                ctx.error("Components with same name '%s' have different types '%s' and '%s'", name, type, componentType);
+                ctx.error("Type %s has components with same name '%s' that have different types '%s' and '%s'", contextType, name, type, componentType);
             }
             return true;
         }
 
         void add(String name, TypeMirror componentType) {
             namesOfTypes.put(name, componentType);
+            Element element = types.asElement(componentType);
+            if (element != null && element.getAnnotation(SharedType.Ignore.class) != null) {
+                ignoredType = componentType;
+            }
         }
     }
 }
