@@ -11,7 +11,7 @@ Menu:
 Add sharedtype dependency, the annotation `@SharedType` is only used at compile time on source code:
 ```xml
 <dependency>
-    <groupId>org.sharedtype</groupId>
+    <groupId>online.sharedtype</groupId>
     <artifactId>sharedtype</artifactId>
     <version>${sharedtype.version}</version>
     <scope>provided</scope>
@@ -27,7 +27,7 @@ Setup annotation processing:
     <configuration>
         <annotationProcessorPaths>
             <path>
-                <groupId>org.sharedtype</groupId>
+                <groupId>online.sharedtype</groupId>
                 <artifactId>sharedtype-ap</artifactId>
                 <version>${project.version}</version>
             </path>
@@ -75,7 +75,7 @@ You can customize the path by config `maven-compiler-plugin`:
 See [Default Properties](../processor/src/main/resources/sharedtype-default.properties) for details.
 
 #### Per annotation options
-See Javadoc on [@SharedType](../annotation/src/main/java/org/sharedtype/annotation/SharedType.java) for details.
+See Javadoc on [@SharedType](../annotation/src/main/java/online/sharedtype/annotation/SharedType.java) for details.
 
 ### Limitations
 * Current design only retain `@SharedType` on source level. That means they are not visible if it is in a dependency jar during its dependent's compilation.

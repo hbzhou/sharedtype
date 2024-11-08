@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.sharedtype</groupId>
+    <groupId>online.sharedtype</groupId>
     <artifactId>sharedtype-parent</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>SharedType Parent</name>
+    <description>SharedType Parent pom</description>
     <url>https://github.com/cuzfrog/sharedtype</url>
     <developers>
         <developer>
@@ -29,15 +29,16 @@
             <url>https://creativecommons.org/licenses/by/4.0/</url>
         </license>
     </licenses>
-
-    <modules>
-        <module>annotation</module>
-        <module>internal</module>
-        <module>processor</module>
-        <module>it</module>
-        <module>it/java8</module>
-        <module>it/java17</module>
-    </modules>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -48,25 +49,14 @@
         <junit-jupiter.version>5.10.2</junit-jupiter.version>
         <lombok.version>1.18.34</lombok.version>
         <auto-service.version>1.1.1</auto-service.version>
-        <dagger.version>2.52</dagger.version>
         <mockito.version>5.14.1</mockito.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.sharedtype</groupId>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>sharedtype</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.sharedtype</groupId>
-                <artifactId>sharedtype-internal</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.sharedtype</groupId>
-                <artifactId>sharedtype-ap</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -98,17 +88,6 @@
                 <version>${auto-service.version}</version>
                 <scope>provided</scope>
                 <optional>true</optional>
-            </dependency>
-            <dependency>
-                <groupId>com.google.dagger</groupId>
-                <artifactId>dagger</artifactId>
-                <version>${dagger.version}</version>
-                <optional>true</optional>
-            </dependency>
-            <dependency>
-                <groupId>com.google.dagger</groupId>
-                <artifactId>dagger-compiler</artifactId>
-                <version>${dagger.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>
@@ -163,10 +142,23 @@
                     <artifactId>maven-clean-plugin</artifactId>
                     <version>3.3.2</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.6.0</version>
+                </plugin>
                 <!-- default lifecycle, jar packaging: see https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
                     <version>3.3.1</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.3.1</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.11.1</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -182,7 +174,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>3.1.2</version>
+                    <version>3.1.3</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-deploy-plugin</artifactId>
@@ -202,7 +194,99 @@
                     <artifactId>editorconfig-maven-plugin</artifactId>
                     <version>0.1.3</version>
                 </plugin>
+                <plugin>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>3.2.7</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>0.6.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>2.17.1</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>annotation</module>
+                <module>processor</module>
+                <module>it</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>release</id>
+            <modules>
+                <module>annotation</module>
+                <module>processor</module>
+            </modules>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <tags>
+                                <tag>
+                                    <name>implNote</name>
+                                    <head>Implementation Note:</head>
+                                </tag>
+                            </tags>
+                            <doclint>all,-missing</doclint>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <checksums>required</checksums>
+                            <deploymentName>SharedType Release</deploymentName>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

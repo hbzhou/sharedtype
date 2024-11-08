@@ -51,11 +51,11 @@ jobs:
         with:
           name: jars
           path: |
-              ~/.m2/repository/org/sharedtype
+              ~/.m2/repository/online/sharedtype
           if-no-files-found: error
           retention-days: 3
       - name: Remove jars from cache
-        run: rm -rf ~/.m2/repository/org/sharedtype
+        run: rm -rf ~/.m2/repository/online/sharedtype
 
   jdk_compatibility_test:
     needs: [build_and_test]
@@ -72,9 +72,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: jars
-          path: ~/.m2/repository/org/sharedtype
+          path: ~/.m2/repository/online/sharedtype
 #      - name: Display downloaded artifact
-#        run: ls -lhR ~/.m2/repository/org/sharedtype
+#        run: ls -lhR ~/.m2/repository/online/sharedtype
       - uses: actions/cache@v4
         with:
           path: ~/.m2/repository

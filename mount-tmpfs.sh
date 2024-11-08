@@ -6,7 +6,7 @@ MAVEN_REPO_CACHE_PATH="$DIR/.run/maven-repository-path.cache"
 if [ -f "$MAVEN_REPO_CACHE_PATH" ]; then
   MAVEN_REPO_DIR=$(cat "$MAVEN_REPO_CACHE_PATH")
 else
-  MAVEN_REPO_DIR="$(./mvnw help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)/org/sharedtype"
+  MAVEN_REPO_DIR="$(./mvnw help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)/online/sharedtype"
   printf '%s' "$MAVEN_REPO_DIR" > "$MAVEN_REPO_CACHE_PATH"
 fi
 
@@ -18,7 +18,6 @@ function mountTmpfs() {
 
 mountTmpfs "$DIR/annotation/target" 32M
 mountTmpfs "$DIR/processor/target" 64M
-mountTmpfs "$DIR/internal/target" 32M
 mountTmpfs "$DIR/it/java17/target" 64M
 mountTmpfs "$DIR/it/java8/target" 64M
 mountTmpfs "$MAVEN_REPO_DIR" 64M
